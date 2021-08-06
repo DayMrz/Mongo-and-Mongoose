@@ -1,0 +1,290 @@
+===================
+What is Mongoose
+===================
+
+ODM
+    object Data Mapper
+    Object Document Mapper
+
+ODM's like mongoose map documents coming from database into usable Javascript objects. 
+
+Mongoose provides ways for us to model out our application data and define a schema. It offers easy ways to validate data and build complex queries form the comfort of JS. 
+
+========================================
+Connection Mongoose to Mongo. 
+========================================
+
+mongoose is an npm 
+        -installed as normally. 
+        - require it from <file.js>
+        -follow the firs part of quick start in docs (https://mongoosejs.com/docs/index.html) connect to localhost 
+        -handling the errors catch()
+
+everything is delivered from a Schema.
+        -define a Schema (model)
+        -create a nested object, it will contain the type attribute (string, number, boolean... and so on )
+        -compiling schema into a model 
+            e.g., const Anime = mongoose.model('Anime', animeSchema); 
+            // Anime in mongodb, became by default 'animes'
+        -defining the first javascript object.
+            e.g., const onePiece = new Anime({ title: 'One Piece', premiered: 1999, score: 8.55, ranked: 84, studios: 'Toei Animation' })
+            
+from terminal: checking location first. 
+        - open node
+        - .load <file.js> 
+        - call a javascript object. 
+
+Open mongo shell
+        - use animeApp  =>  way of requiring 
+        - db.animes.find() => find() method
+
+=====================================================
+Inserting Many
+=====================================================
+
+
+
+
+
+
+===========================================================
+Finding with Mongoose
+===========================================================
+from terminal we can use the find() method, and it will return a <<query>>
+            -syntax :
+                Mode.find({})
+                it returns a string with a bunch of information that at this moment, I don't need. 
+        -to get only the data I created for Anime I must console.log(data).
+            e.g., > Anime.find({}).then(data => console.log(data))
+        It returns an array promise with all the data I insert form my Javascript file, and its already in mongo
+        - I can be very straight and ask for something specific, by insert in the curly braces the info i need. 
+            !!! Remember you have many OPERATORS from mongodb to get specific information. !!!
+            e.g., Anime.find({premiered: {$gte: 2017}}).then(data => console.log(data))
+        findOne({}) method, will give me the first movie, info ... 
+            ...this is not common  
+        findById({}).then(data => console.log(data)) ... this is commonly use. 
+            ...just place the Id as a string ('') and thats it 
+            e.g., Anime.findById('60acf68ca9e9531278beab49').then(data => console.log(data))
+             {
+            _id: 60acf68ca9e9531278beab49,
+            title: 'Black Clover',
+            premiered: 2017,
+            score: 7.99,
+            ranked: 553,
+            studios: 'Studio Pierrot',
+            __v: 0
+            }
+
+
+===========================================================
+Updating with Mongoose
+===========================================================
+
+as before, there are many methods for updating
+        updateOne() ... will update an specific value. 
+            e.g., Anime.updateOne({title: 'The God of High School'}, {ranked: 7.5}).then(data => console.log(data))
+                Promise { <pending> }
+                > { n: 1, nModified: 1, ok: 1 }
+
+            calling the find() method on mongodb will print the arrays and  my update will be performed
+        updatedMany()
+            e.g., <model>.updatedMany({field: {$in: [<value1>,<value2>, ...<valueN]}}).then(data => console.log(data))
+        findOneAndUpdate() method
+            e.g., Anime.findOneAndUpdate({title: 'Captain Tsubasa'}, {score: 7.41}).then(data => console.log(data))
+                ... this prints out the old version of the document I just updated. 
+                in the documentation there is something called new which by default is set to false --> this is what gave me the old value.
+                then i have to set it to 'true' and this will print the new value. 
+            e.g., Anime.findOneAndUpdate({title: 'Captain Tsubasa'}, {score: 7.42}, {new: true}).then(data => console.log(data))
+                ... the update will be reflected when print out
+
+============================================================
+Deleting with Mongoose
+============================================================
+    remove() method  DEPRECATED
+            it will remove everything I specified in it
+        e.g., Anime.remove({title: 'One Pieces'}).then(data => console.log(data))
+
+    findOneAndDelete({<value>}).then(data => console.log(data))
+        e.g.,> Anime.findOneAndDelete({ranked: 1}).then(data => console.log(data))
+        Promise { <pending> }
+        > {
+        _id: 60ac6c8b28d1f34144bcd6c2,
+        title: 'One Pieces',
+        premiered: 1999,
+        score: 8.55,
+        ranked: 1,
+        studios: 'Toei Animation',
+        __v: 0
+
+========================================================================
+Mongoose Schema Validation
+========================================================================
+above, we create an Schema without specified the type properties this step will validate if the type of the product I created is the one  I supposed to use.
+
+    const productSchema = new mongoose.Schema({
+    name: {
+        type: String, 
+        required: true  
+                        // if i type a value which is not an String it won't be accepted
+    },
+    price: {
+        type: Number, 
+        required: true  
+                        // if i type a value which is not a number it won't be accepted
+
+                // option required: validates if the value satisfies the required validator. 
+    }
+});
+
+if I don't define a type in the product it will be ignore
+
+=========================================================
+Additional Schema Constraints
+======================================================
+(https://mongoosejs.com/docs/schematypes.html)
+
+All schema types 
+    -required, boolean or function, if true adds a required validator for this property.
+            e.g.,    price: {
+                    type: Number,
+                    required: true
+                    }
+    -default: Any or function, sets a default value for the path. if the value is a function, the return value of the function is used as the default. 
+
+            e.g.,  onSale: {
+                    type: Boolean,
+                    default: false
+                     }
+see also String and number 
+    -string 
+        -lowercase: boolean, whether to call .toLowerCase() on the value
+        -uppercase: boolean, whether to call .toUpperCase() on the value
+        -trim: boolean, whether to always call .trim() on the value
+        -match: RegExp, creates a validator that checks if the value matches the given regular expression
+        -enum: Array, creates a validator that checks if the value is in the given array.
+        -minLength: Number, creates a validator that checks if the value length is not less than the given number
+        -maxLength: Number, creates a validator that checks if the value length is not greater than the given number
+            e.g.,   name: {
+                    type: String,
+                    required: true,
+                    maxLength: 20  
+                   },
+                        //if the name of my product is bigger, this will give me an error "product validation failed" because is longer than the maximum allowed length
+        -populate: Object, sets default populate options
+
+    -Numbers:
+        -min: Number, creates a validator that checks if the value is greater than or equal to the given minimum.
+            e.g.,   price: {
+                    type: Number,
+                    required: true,
+                    min: 0
+                }, 
+                            for a price will be logic Not to have a negative number.. that's set to 0
+        -max: Number, creates a validator that checks if the value is less than or equal to the given maximum.
+        -enum: Array, creates a validator that checks if the value is strictly equal to one of the values in the given array.
+        -populate: Object, sets default populate options
+
+I create a category, which is an array, set to be an string.
+
+I also can nest different info into an document object. 
+  qty: {
+        online: {
+            type: Number,
+            default: 0
+        },
+        inStore: {
+            type: Number,
+            default: 0
+        }
+    }
+
+================================================================
+Validating mongoose Update
+================================================================
+https://mongoosejs.com/docs/api/model.html#model_Model.findOneAndUpdate
+
+there are different options. 
+    -runValidators: if true, runs update validators on this command. 
+    Update validators validate the update operation against the model's schema.
+            e.g., Product.findOneAndUpdate({ name: 'Tire Pump' }, { price: -19 }, { new: true, runValidators: true })
+        .then(data => {
+            console.log("IT WORKED!")
+            console.log(data);
+        })
+        .catch(err => {
+            console.log("OHH ERROR!!")
+            console.log(err);
+        })
+
+        OUTPUT:
+          errors: {
+    price: ValidatorError: Path `price` (-19) is less than minimum allowed value (0).
+===============================================================
+Validation errors
+===============================================================
+String:
+        enum: Array, creates a validator that checks if the value is in the given array. 
+            e.g.,    size: {
+                        type: String,
+                        enum: ['S', 'M', 'L', 'XL']
+                    }, 
+                 const bike = new Product({ name: 'Cycling Jersey', price: 28.60, categories: ['Cycling'], size: 'XS' })
+
+            OUTPUT:  size: ValidatorError: `XS` is not a valid enum value for path `size`.
+
+=================================================================
+Model Instance Methods
+===============================================================
+
+
+When we work at authentication we use this validation instance methods, to confirm that the value, doc product or any information the user or me is adding meets the requirements I am looking for.
+
+    i can define my own custom documents instance methods
+
+    e.g.,
+            productSchema.methods.greet = function () {
+                console.log("HELLO!! HI!! HOLA!!");
+                console.groupCollapsed(`-from ${this.name} `)
+            }
+
+            const Product = mongoose.model('Product', productSchema);
+
+            const findProduct = async () => {
+                const foundProduct = await Product.findOne({ name: 'Bike Helmet' });
+                foundProduct.greet();
+            }
+
+            findProduct();
+
+===============================================================
+Adding Model Static Methods.
+===============================================================
+I can also add function to your model. There are two equivalent ways to add a static:
+
+Do not declare statics using ES6 arrow functions (=>). Arrow functions explicitly prevent binding this, so the above examples will not work because of the value of this.
+
+===============================================================
+Mongoose  virtuals
+===============================================================
+https://mongoosejs.com/docs/guide.html#virtuals
+
+Virtuals are document properties that you can get and set but that do not get persisted to mongoDB. The getters are useful for formatting or combining fields, while setters are useful for de-composing a singlr value into multiples values for storage. 
+
+===========================================================
+Defining Mongoose Middleware
+===========================================================
+https://mongoosejs.com/docs/middleware.html
+
+Middleware is software that provides common services and capabilities to applications outside of what's offered by the operating system. Data management, application services, messaging, authentication, and API management are all commonly handled by middleware. 
+
+Middleware helps developers build applications more efficiently, it acts like the connective tissue between applications, data and users.
+
+(see pre and post on person.js)
+> const p = new Person({ first: 'Pablo', last:'Bartz'})
+
+
+> p.save().then(data => console.log(data))
+Promise { <pending> }
+> ABOUT TO SAVE
+Just Saved!!
+{ _id: 60af17df09da3b272067735d, first: 'YO', last: 'MAMA', __v: 0 }
