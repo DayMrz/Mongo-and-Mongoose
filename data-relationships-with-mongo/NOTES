@@ -1,0 +1,225 @@
+    MONGO RELATIONSHIPS
+====================================
+
+to fetch the information is important to create a sort of "information tables" where we can store info related to our side. 
+
+=======================
+SQL DATA RELATIONSHIPS
+=======================
+
+ONE TO MANY.
+    
+    ONE * e.g.,
+        User 
+        id  first   last 
+        1   Tommy   Cash
+        2   Trens   Bound
+        3   Janis   Joplin
+
+        Post
+        id  title        link    date    User-id 
+        1   my blah blah                    3
+
+    if we store info by using names, we could have different problems, because the USER can change the name, update some comments or post some more information, reason why we might have to repeat some actions several times, besides we may lost info because it is not longer related to the username. a best practice is to give an user-ID that does not change. 
+
+ONE to MANY
+    MANY*
+        Movie 
+        id  title           year 
+        1   The Favorite    2018
+        2   The Lobster     2015
+        3   In Bruges       2008
+
+        Actor 
+        id  First       Last 
+        1   Olivia      Colman
+        2   Nicholas    Hoult 
+        3   Colin       Farrel 
+
+    let's suppose that these actors were in different movies, so instead of creating a single table with all the info, we can use their id to match the movies that they were.
+
+        Role 
+        movie-ID    actor-ID
+        1           1
+        1           2
+        2           1   
+        2           3
+        3           3
+
+    But having info as the table above is meaningless because we need to have the other tables to reference each ID.
+*****THIS IS ONE APPROACH OF HOW WE CAN STRUCTURE DATA WITH MONGO.
+
+    =======
+    ONE TO FEW   // user.js file 
+    =======
+    * embed the data directly in the document!
+        {
+            name: 'Tommy Cash',
+            savedAddresses : [
+                {street : 'Rahokk 3', city: 'Tallina', Country: 'Estonia'}
+                {street : 'Ravala 3', city: 'Tallina', Country: 'Estonia'}
+            ]
+        }
+SCHEMA
+        const userSchema = new mongoose.Schema({
+            first: String,
+            last: String,
+            addresses: [
+                {
+                street: String,
+                city: String,
+                state: String,
+                country: String
+                }
+            ]
+        })
+
+        const u = new User({   //the user will have an ID and 
+            first: 'Harry',
+            last: 'Potter'
+        })
+        u.addresses.push({  // this part will also have an ID
+            street: '123 Sesame St.',
+            city: 'New York',
+            state: 'NY',
+            country: 'USA'
+        })
+
+        depending of what we are going to do, we may need both ID o maybe only one, if the case is only one ID we can turn u.addresses off like this 
+    e.g., 
+
+      const userSchema = new mongoose.Schema({
+            first: String,
+            last: String,
+            addresses: [
+                {
+                    _id: {id : false},
+                street: String,
+                city: String,
+                state: String,
+                country: String
+                }
+            ]
+        })
+
+        // terminal printout
+
+        {
+        _id: 60f635827c0be642708e3d71,
+        first: 'Harry',
+        last: 'Potter',
+        addresses: [    ----> // does not have an id
+            {
+            street: '123 Sesame St.',
+            city: 'New York',
+            state: 'NY',
+            country: 'USA'
+            }
+        ],
+        __v: 0
+        }
+
+        this user can have more than one addresses
+
+        const addAddresses = async (id) => {
+            const user = await User.findById(id);
+            user.addresses.push(
+                {
+                    street: 'Calle falsa 123',
+                    city: 'Springfield',
+                    state: 'NT',
+                    country: 'USA'
+                }
+            )
+            const res = await user.save()
+            console.log(res)
+        }
+
+        // makeUser();
+        addAddresses('60f635827c0be642708e3d71')
+
+
+===================================
+ONE TO MANY :   // farm.js file
+docs:
+https://mongoosejs.com/docs/populate.html
+
+One option is to store your data separately, but then store references to documents ID's somewhere inside the parent. 
+
+we have two different models one for products and one for farm, 
+think of them as a two parents who has different children. what we want is, instead of typing a farm and repeating some of the children of the parent products inside.  we are gonna use findOne to get that info for us,
+that way, my new farm will have products without having to type them. 
+
+this action will gave us a new object with some other objects nested inside as an array, this object is only the ID of the products we found.
+
+{
+  products: [
+    {
+      _id: 60f63dd4792f8b50a4db8b79,
+
+    },
+    {
+      _id: 60f63dd4792f8b50a4db8b7a,
+
+    }
+  ],
+  _id: 60f64b40fab41352643649bd,
+  name: 'Full Belly Farms',
+  city: 'Guinda, CA',
+  __v: 1
+}
+
+
+Populate: it gave us the possibility of visualizing the complete info for each object.
+
+            const addProduct = async () => {
+                const farm = await Farm.findOne({ name: 'Full Belly Farms' })
+                const watermelon = await Product.findOne({ name: 'Sugar Baby Watermelon' })
+                farm.products.push(watermelon);
+                farm.save()
+            }
+
+            Farm.findOne({ name: 'Full Belly Farms' })
+                .populate('products')
+                .then(farm => console.log(farm))
+
+                {
+        products: [
+            {
+            _id: 60f63dd4792f8b50a4db8b79,
+            name: 'Goddess Melon',
+            price: 4.99,
+            season: 'Summer',
+            __v: 0
+            },
+            {
+            _id: 60f63dd4792f8b50a4db8b7a,
+            name: 'Sugar Baby Watermelon',
+            price: 4.99,
+            season: 'Summer',
+            __v: 0
+            }
+        ],
+        _id: 60f64b40fab41352643649bd,
+        name: 'Full Belly Farms',
+        city: 'Guinda, CA',
+        __v: 1
+        }
+
+
+
+=======================================
+ONE TO BAJILLIONS
+=======================================
+
+With thousand or more documents it's more efficient to store a reference to the parent on the child document
+
+we have to Schemas one for user and other for tweets, also we are gonna create two models,  pliiiiiiis check tweet.js file
+
+
+========================================
+MONGO SCHEMA DESIGN 
+========================================
+https://www.mongodb.com/blog/post/6-rules-of-thumb-for-mongodb-schema-design-part-3
+
+
